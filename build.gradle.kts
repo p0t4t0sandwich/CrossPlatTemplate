@@ -149,6 +149,7 @@ tasks.register<Jar>("commonJar") {
 
 // ------------------------------------------- BungeeCord -------------------------------------------
 tasks.register<Jar>("bungeecordJar") {
+    archiveClassifier.set("bungeecord")
     from(sourceSets.getByName("bungeecord").output)
     from(sourceSets.getByName("api").output)
     from(sourceSets.getByName("common").output)
@@ -205,6 +206,7 @@ unimined.minecraft(sourceSets.getByName("sponge")) {
 
 // ------------------------------------------- Spigot -------------------------------------------
 tasks.register<Jar>("spigotJar") {
+    archiveClassifier.set("spigot")
     from(sourceSets.getByName("spigot").output)
     from(sourceSets.getByName("api").output)
     from(sourceSets.getByName("common").output)
@@ -212,6 +214,7 @@ tasks.register<Jar>("spigotJar") {
 
 // ------------------------------------------- Velocity -------------------------------------------
 tasks.register<Jar>("velocityJar") {
+    archiveClassifier.set("velocity")
     from(sourceSets.getByName("velocity").output)
     from(sourceSets.getByName("api").output)
     from(sourceSets.getByName("common").output)

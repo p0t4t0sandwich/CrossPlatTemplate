@@ -5,11 +5,12 @@
 package com.example.templatemod.velocity;
 
 import com.example.templatemod.Constants;
-import com.example.templatemod.vanilla.CommonClass;
+import com.example.templatemod.common.CommonClass;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
 
 import org.slf4j.Logger;
@@ -22,11 +23,13 @@ import org.slf4j.Logger;
         description = Constants.DESCRIPTION,
         url = Constants.URL)
 public class TemplateModVelocity {
+    private final PluginContainer plugin;
     private final ProxyServer server;
     private final Logger logger;
 
     @Inject
-    public TemplateModVelocity(ProxyServer server, Logger logger) {
+    public TemplateModVelocity(PluginContainer plugin, ProxyServer server, Logger logger) {
+        this.plugin = plugin;
         this.server = server;
         this.logger = logger;
     }

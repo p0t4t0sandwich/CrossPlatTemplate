@@ -1,4 +1,5 @@
 import xyz.wagyourtail.unimined.api.minecraft.task.RemapJarTask
+import java.time.Instant
 
 plugins {
     id("java")
@@ -49,54 +50,54 @@ spotless {
 }
 
 sourceSets {
-    main.get().blossom.javaSources {
-        property("mod_id", modId)
-        property("mod_name", modName)
-        property("version", version.toString())
-        property("license", license)
-        property("author", author)
-        property("description", description)
-        property("homepage_url", homepageUrl)
-    }
     create("api")
+    create("common") {
+        blossom.javaSources {
+            property("mod_id", modId)
+            property("mod_name", modName)
+            property("version", version.toString())
+            property("license", license)
+            property("author", author)
+            property("description", description)
+            property("homepage_url", homepageUrl)
+        }
+    }
     create("bungeecord") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
+        compileClasspath += getByName("api").output
+        compileClasspath += getByName("common").output
+        runtimeClasspath += getByName("api").output
+        runtimeClasspath += getByName("common").output
     }
-    create("fabric") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
+    create("fabric")
+    create("forge")
+    create("neoforge")
+    create("paper")
+    create("spigot") {
+        compileClasspath += getByName("api").output
+        compileClasspath += getByName("common").output
+        runtimeClasspath += getByName("api").output
+        runtimeClasspath += getByName("common").output
     }
-    create("forge") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
-    }
-    create("neoforge") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
-    }
-    create("paper") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
-    }
-    create("sponge") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
-    }
+    create("sponge")
     create("velocity") {
-        compileClasspath += main.get().output
-        runtimeClasspath += main.get().output
+        compileClasspath += getByName("api").output
+        compileClasspath += getByName("common").output
+        runtimeClasspath += getByName("api").output
+        runtimeClasspath += getByName("common").output
     }
 }
 
 configurations {
     val mainCompileOnly by creating
     named("compileOnly") {
+        extendsFrom(getByName("apiCompileOnly"))
+        extendsFrom(getByName("commonCompileOnly"))
         extendsFrom(getByName("bungeecordCompileOnly"))
         extendsFrom(getByName("fabricCompileOnly"))
         extendsFrom(getByName("forgeCompileOnly"))
         extendsFrom(getByName("neoforgeCompileOnly"))
         extendsFrom(getByName("paperCompileOnly"))
+        extendsFrom(getByName("spigotCompileOnly"))
         extendsFrom(getByName("spongeCompileOnly"))
         extendsFrom(getByName("velocityCompileOnly"))
     }
@@ -114,10 +115,13 @@ repositories {
     unimined.parchmentMaven()
     unimined.spongeMaven()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
 }
 
 // ------------------------------------------- Vanilla -------------------------------------------
 unimined.minecraft {
+    combineWith(sourceSets.getByName("api"))
+    combineWith(sourceSets.getByName("common"))
     version(minecraftVersion)
     mappings {
         parchment(parchmentMinecraft, parchmentVersion)
@@ -137,11 +141,17 @@ tasks.register<Jar>("apiJar") {
     from(sourceSets.getByName("api").output)
 }
 
+// ------------------------------------------- Common -------------------------------------------
+tasks.register<Jar>("commonJar") {
+    archiveClassifier.set("common")
+    from(sourceSets.getByName("common").output)
+}
+
 // ------------------------------------------- BungeeCord -------------------------------------------
-unimined.minecraft(sourceSets.getByName("bungeecord")) {
-    combineWith(sourceSets.main.get())
-    combineWith(sourceSets.getByName("api"))
-    defaultRemapJar = true
+tasks.register<Jar>("bungeecordJar") {
+    from(sourceSets.getByName("bungeecord").output)
+    from(sourceSets.getByName("api").output)
+    from(sourceSets.getByName("common").output)
 }
 
 // ------------------------------------------- Fabric -------------------------------------------
@@ -193,16 +203,25 @@ unimined.minecraft(sourceSets.getByName("sponge")) {
     defaultRemapJar = true
 }
 
+// ------------------------------------------- Spigot -------------------------------------------
+tasks.register<Jar>("spigotJar") {
+    from(sourceSets.getByName("spigot").output)
+    from(sourceSets.getByName("api").output)
+    from(sourceSets.getByName("common").output)
+}
+
 // ------------------------------------------- Velocity -------------------------------------------
-unimined.minecraft(sourceSets.getByName("velocity")) {
-    combineWith(sourceSets.main.get())
-    defaultRemapJar = true
+tasks.register<Jar>("velocityJar") {
+    from(sourceSets.getByName("velocity").output)
+    from(sourceSets.getByName("api").output)
+    from(sourceSets.getByName("common").output)
 }
 
 // ------------------------------------------- Common -------------------------------------------
 dependencies {
     implementation(libs.annotations)
     implementation(libs.mixin)
+    "commonCompileOnly"("org.slf4j:slf4j-api:2.0.16")
     "bungeecordCompileOnly"("net.md-5:bungeecord-api:$bungeecordVersion")
     listOf(
         "fabric-api-base",
@@ -214,6 +233,7 @@ dependencies {
     "paperCompileOnly"("io.papermc.paper:paper-api:$minecraftVersion-$paperVersion")
     "paperCompileOnly"(libs.ignite.api)
     "paperCompileOnly"(libs.mixin)
+    //"spigotCompileOnly"("org.spigotmc:spigot-api:$minecraftVersion-$spigotVersion")
     "spongeCompileOnly"("org.spongepowered:spongeapi:$spongeVersion")
     "spongeCompileOnly"(libs.mixin)
     "velocityCompileOnly"("com.velocitypowered:velocity-api:$velocityVersion")
@@ -236,4 +256,33 @@ tasks.withType<ProcessResources> {
     }
 }
 
-tasks.build.get().dependsOn("spotlessApply")
+tasks.withType<Jar> {
+    manifest {
+        attributes(
+            mapOf(
+                "Specification-Title" to modName,
+                "Specification-Version" to version,
+                "Specification-Vendor" to "SomeVendor",
+                "Implementation-Version" to version,
+                "Implementation-Vendor" to "SomeVendor",
+                "Implementation-Timestamp" to Instant.now().toString(),
+                "FMLCorePluginContainsFMLMod" to "true",
+                "TweakClass" to "org.spongepowered.asm.launch.MixinTweaker",
+                "MixinConfigs" to "$modId.mixins.json,$modId.forge.mixins.json"
+            )
+        )
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(listOf("README.md", "LICENSE")) {
+        into("META-INF")
+    }
+}
+
+tasks.build.get().dependsOn(
+    "apiJar",
+    "commonJar",
+    "bungeecordJar",
+    //"spigotJar",
+    "velocityJar",
+    "spotlessApply",
+)

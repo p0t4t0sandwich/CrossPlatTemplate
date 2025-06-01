@@ -5,7 +5,7 @@
 package com.example.templatemod.neoforge;
 
 import com.example.templatemod.Constants;
-import com.example.templatemod.vanilla.CommonClass;
+import com.example.templatemod.common.CommonClass;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;

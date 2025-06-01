@@ -4,15 +4,14 @@
  */
 package com.example.templatemod.bungeecord;
 
-import com.example.templatemod.Constants;
-import com.example.templatemod.vanilla.CommonClass;
+import com.example.templatemod.common.CommonClass;
 
 import net.md_5.bungee.api.plugin.Plugin;
 
 public class TemplateModBungeeCord extends Plugin {
     @Override
     public void onEnable() {
-        Constants.logger().info("Hello BungeeCord world!");
+        getLogger().info("Hello BungeeCord world!");
         CommonClass.init();
     }
 

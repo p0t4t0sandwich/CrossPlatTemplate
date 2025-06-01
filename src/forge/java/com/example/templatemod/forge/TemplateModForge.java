@@ -5,7 +5,7 @@
 package com.example.templatemod.forge;
 
 import com.example.templatemod.Constants;
-import com.example.templatemod.vanilla.CommonClass;
+import com.example.templatemod.common.CommonClass;
 
 import net.minecraftforge.fml.common.Mod;
 

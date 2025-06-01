@@ -5,12 +5,11 @@
 package com.example.templatemod.fabric;
 
 import com.example.templatemod.Constants;
-import com.example.templatemod.vanilla.CommonClass;
+import com.example.templatemod.common.CommonClass;
 
 import net.fabricmc.api.ModInitializer;
 
 public class TemplateModFabric implements ModInitializer {
-
     @Override
     public void onInitialize() {
         Constants.logger().info("Hello Fabric world!");

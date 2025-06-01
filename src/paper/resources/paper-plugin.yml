@@ -1,0 +1,18 @@
+name: '${mod_name}'
+version: '${version}'
+main: 'com.example.templatemod.paper.TemplateModPaper'
+description: '${description}'
+api-version: '${minecraft_version}'
+bootstrapper: 'com.example.templatemod.paper.TemplateModPaperBootstrap'
+loader: 'com.example.templatemod.paper.TemplateModPaperLoader'
+#dependencies:
+#  bootstrap:
+#    RegistryPlugin:
+#      load: BEFORE
+#      required: true
+#      join-classpath: true
+#  server:
+#    RequiredPlugin:
+#      load: AFTER
+#      required: true
+#      join-classpath: false

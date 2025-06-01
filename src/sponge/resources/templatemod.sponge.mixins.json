@@ -1,0 +1,14 @@
+{
+  "compatibilityLevel": "JAVA_21",
+  "required": true,
+  "minVersion": "0.8",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "package": "com.example.templatemod.sponge.mixin",
+  "mixins": [
+    "ExampleMixin"
+  ],
+  "client": [],
+  "server": []
+}

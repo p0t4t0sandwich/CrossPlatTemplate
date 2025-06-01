@@ -1,0 +1,9 @@
+{
+  "id": "${mod_id}",
+  "version": "${version}",
+  "mixins": [
+    "${mod_id}.mixins.json",
+    "${mod_id}.paper.mixins.json"
+  ],
+  "wideners": []
+}

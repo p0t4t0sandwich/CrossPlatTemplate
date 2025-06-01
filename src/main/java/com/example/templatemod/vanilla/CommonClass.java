@@ -1,0 +1,9 @@
+/**
+ * Copyright (c) 2025 SomeNameHere - person@example.com
+ * The project is Licensed under <a href="https://github.com/Example/TestMod/blob/dev/LICENSE">MIT</a>
+ */
+package com.example.templatemod.vanilla;
+
+public class CommonClass {
+    public static void init() {}
+}

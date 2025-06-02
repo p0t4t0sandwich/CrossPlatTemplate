@@ -50,7 +50,9 @@ spotless {
 }
 
 sourceSets {
-    create("api")
+    listOf("api", "fabric", "forge", "neoforge", "paper", "sponge").forEach {
+        create(it)
+    }
     create("common") {
         blossom.javaSources {
             property("mod_id", modId)
@@ -62,49 +64,29 @@ sourceSets {
             property("homepage_url", homepageUrl)
         }
     }
-    create("bungeecord") {
-        compileClasspath += getByName("api").output
-        compileClasspath += getByName("common").output
-        runtimeClasspath += getByName("api").output
-        runtimeClasspath += getByName("common").output
-    }
-    create("fabric")
-    create("forge")
-    create("neoforge")
-    create("paper")
-    create("spigot") {
-        compileClasspath += getByName("api").output
-        compileClasspath += getByName("common").output
-        runtimeClasspath += getByName("api").output
-        runtimeClasspath += getByName("common").output
-    }
-    create("sponge")
-    create("velocity") {
-        compileClasspath += getByName("api").output
-        compileClasspath += getByName("common").output
-        runtimeClasspath += getByName("api").output
-        runtimeClasspath += getByName("common").output
+    listOf("bungeecord", "spigot", "velocity").forEach {
+        create(it) {
+            compileClasspath += getByName("api").output
+            compileClasspath += getByName("common").output
+            runtimeClasspath += getByName("api").output
+            runtimeClasspath += getByName("common").output
+        }
     }
 }
 
 configurations {
+    listOf("bungeecord", "fabric", "forge", "neoforge", "paper", "spigot", "sponge", "velocity").forEach {
+        named(it + "CompileOnly") {
+            extendsFrom(getByName("apiCompileOnly"))
+            extendsFrom(getByName("commonCompileOnly"))
+        }
+    }
     val mainCompileOnly by creating
-    named("compileOnly") {
-        extendsFrom(getByName("apiCompileOnly"))
-        extendsFrom(getByName("commonCompileOnly"))
-        extendsFrom(getByName("bungeecordCompileOnly"))
-        extendsFrom(getByName("fabricCompileOnly"))
-        extendsFrom(getByName("forgeCompileOnly"))
-        extendsFrom(getByName("neoforgeCompileOnly"))
-        extendsFrom(getByName("paperCompileOnly"))
-        extendsFrom(getByName("spigotCompileOnly"))
-        extendsFrom(getByName("spongeCompileOnly"))
-        extendsFrom(getByName("velocityCompileOnly"))
+    listOf("compileOnly", "paperCompileOnly", "spongeCompileOnly").forEach {
+        getByName(it).extendsFrom(mainCompileOnly)
     }
     val modImplementation by creating
-    named("modImplementation") {
-        extendsFrom(getByName("fabricImplementation"))
-    }
+    getByName("fabricImplementation").extendsFrom(modImplementation)
 }
 
 repositories {
@@ -151,8 +133,6 @@ tasks.register<Jar>("commonJar") {
 tasks.register<Jar>("bungeecordJar") {
     archiveClassifier.set("bungeecord")
     from(sourceSets.getByName("bungeecord").output)
-    from(sourceSets.getByName("api").output)
-    from(sourceSets.getByName("common").output)
 }
 
 // ------------------------------------------- Fabric -------------------------------------------
@@ -208,37 +188,27 @@ unimined.minecraft(sourceSets.getByName("sponge")) {
 tasks.register<Jar>("spigotJar") {
     archiveClassifier.set("spigot")
     from(sourceSets.getByName("spigot").output)
-    from(sourceSets.getByName("api").output)
-    from(sourceSets.getByName("common").output)
 }
 
 // ------------------------------------------- Velocity -------------------------------------------
 tasks.register<Jar>("velocityJar") {
     archiveClassifier.set("velocity")
     from(sourceSets.getByName("velocity").output)
-    from(sourceSets.getByName("api").output)
-    from(sourceSets.getByName("common").output)
 }
 
 // ------------------------------------------- Common -------------------------------------------
 dependencies {
-    implementation(libs.annotations)
-    implementation(libs.mixin)
+    "mainCompileOnly"(libs.annotations)
+    "mainCompileOnly"(libs.mixin)
     "commonCompileOnly"("org.slf4j:slf4j-api:2.0.16")
     "bungeecordCompileOnly"("net.md-5:bungeecord-api:$bungeecordVersion")
-    listOf(
-        "fabric-api-base",
-        "fabric-command-api-v2",
-        "fabric-lifecycle-events-v1"
-    ).forEach {
+    listOf("fabric-api-base", "fabric-command-api-v2", "fabric-lifecycle-events-v1").forEach {
         "fabricModImplementation"(fabricApi.fabricModule(it, fabricVersion))
     }
     "paperCompileOnly"("io.papermc.paper:paper-api:$minecraftVersion-$paperVersion")
     "paperCompileOnly"(libs.ignite.api)
-    "paperCompileOnly"(libs.mixin)
-    //"spigotCompileOnly"("org.spigotmc:spigot-api:$minecraftVersion-$spigotVersion")
+    "spigotCompileOnly"("org.spigotmc:spigot-api:$minecraftVersion-$spigotVersion")
     "spongeCompileOnly"("org.spongepowered:spongeapi:$spongeVersion")
-    "spongeCompileOnly"(libs.mixin)
     "velocityCompileOnly"("com.velocitypowered:velocity-api:$velocityVersion")
 }
 
@@ -285,7 +255,7 @@ tasks.build.get().dependsOn(
     "apiJar",
     "commonJar",
     "bungeecordJar",
-    //"spigotJar",
+    "spigotJar",
     "velocityJar",
     "spotlessApply",
 )

@@ -4,6 +4,7 @@
  */
 package com.example.templatemod.paper;
 
+import com.example.templatemod.Constants;
 import com.example.templatemod.common.CommonClass;
 
 import org.bukkit.Bukkit;
@@ -15,7 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class TemplateModSpigot extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
-        getLogger().info("Hello Paper world!");
+        Constants.logger().info("Hello Spigot world!");
         CommonClass.init();
 
         Bukkit.getPluginManager().registerEvents(this, this);

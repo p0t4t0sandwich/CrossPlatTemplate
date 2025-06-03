@@ -173,7 +173,7 @@ unimined.minecraft(sourceSets.getByName("paper")) {
     combineWith(sourceSets.main.get())
     accessTransformer {
         // https://github.com/PaperMC/Paper/blob/main/build-data/paper.at
-        accessTransformer("src/paper/paper.at")
+        accessTransformer("${rootProject.projectDir}/src/paper/paper.at")
     }
     defaultRemapJar = true
 }

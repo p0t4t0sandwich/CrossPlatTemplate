@@ -66,10 +66,10 @@ sourceSets {
     }
     listOf("bungeecord", "spigot", "velocity").forEach {
         create(it) {
-            compileClasspath += getByName("api").output
-            compileClasspath += getByName("common").output
-            runtimeClasspath += getByName("api").output
-            runtimeClasspath += getByName("common").output
+            listOf("api", "common").forEach { sourceSetName ->
+                compileClasspath += getByName(sourceSetName).output
+                runtimeClasspath += getByName(sourceSetName).output
+            }
         }
     }
 }

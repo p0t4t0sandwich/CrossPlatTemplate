@@ -21,8 +21,8 @@
     "server": []
   },
   "mixins": [
-    "templatemod.mixins.json",
-    "templatemod.fabric.mixins.json"
+    "templatemod.mixins.vanilla.json",
+    "templatemod.mixins.fabric.json"
   ],
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",

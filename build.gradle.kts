@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import xyz.wagyourtail.unimined.api.minecraft.task.RemapJarTask
 import java.time.Instant
 
@@ -7,6 +8,7 @@ plugins {
     id("idea")
     id("eclipse")
     alias(libs.plugins.blossom)
+    alias(libs.plugins.shadow)
     alias(libs.plugins.spotless)
     alias(libs.plugins.unimined)
 }
@@ -19,13 +21,9 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(javaVersion)
 java.sourceCompatibility = JavaVersion.toVersion(javaVersion)
 java.targetCompatibility = JavaVersion.toVersion(javaVersion)
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-}
-
 spotless {
     format("misc") {
-        target("*.gradle", ".gitattributes", ".gitignore")
+        target("*.gradle.kts", ".gitattributes", ".gitignore")
         trimTrailingWhitespace()
         leadingTabsToSpaces()
         endWithNewline()
@@ -41,55 +39,83 @@ spotless {
             .formatJavadoc(true)
             .reorderImports(true)
         formatAnnotations()
+        trimTrailingWhitespace()
+        leadingTabsToSpaces()
+        endWithNewline()
         licenseHeader("""/**
- * Copyright (c) 2025 $author - person@example.com
- * The project is Licensed under <a href="https://github.com/Example/TestMod/blob/dev/LICENSE">MIT</a>
- */
+* Copyright (c) 2025 $author
+* The project is Licensed under <a href="https://github.com/Example/TestMod/blob/dev/LICENSE">MIT</a>
+*/
 """)
     }
 }
 
-sourceSets {
-    listOf("api", "fabric", "forge", "neoforge", "paper", "sponge").forEach {
-        create(it)
+val api: SourceSet by sourceSets.creating
+val common: SourceSet by sourceSets.creating {
+    blossom.javaSources {
+        property("mod_id", modId)
+        property("mod_name", modName)
+        property("version", version.toString())
+        property("license", license)
+        property("author", author)
+        property("description", description)
+        property("homepage_url", homepageUrl)
     }
-    create("common") {
-        blossom.javaSources {
-            property("mod_id", modId)
-            property("mod_name", modName)
-            property("version", version.toString())
-            property("license", license)
-            property("author", author)
-            property("description", description)
-            property("homepage_url", homepageUrl)
-        }
-    }
-    listOf("bungeecord", "spigot", "velocity").forEach {
-        create(it) {
-            listOf("api", "common").forEach { sourceSetName ->
-                compileClasspath += getByName(sourceSetName).output
-                runtimeClasspath += getByName(sourceSetName).output
-            }
-        }
+}
+val bungeecord: SourceSet by sourceSets.creating
+val fabric: SourceSet by sourceSets.creating
+val forge: SourceSet by sourceSets.creating
+val neoforge: SourceSet by sourceSets.creating
+val paper: SourceSet by sourceSets.creating
+val spigot: SourceSet by sourceSets.creating
+val sponge: SourceSet by sourceSets.creating
+val velocity: SourceSet by sourceSets.creating
+listOf(bungeecord, spigot, velocity).forEach {
+    listOf(api, common).forEach { sourceSet ->
+        it.compileClasspath += sourceSet.output
+        it.runtimeClasspath += sourceSet.output
     }
 }
 
-configurations {
-    listOf("bungeecord", "fabric", "forge", "neoforge", "paper", "spigot", "sponge", "velocity").forEach {
-        named(it + "CompileOnly") {
-            extendsFrom(getByName("apiCompileOnly"))
-            extendsFrom(getByName("commonCompileOnly"))
-        }
+val mainCompileOnly: Configuration by configurations.creating
+configurations.compileOnly.get().extendsFrom(mainCompileOnly)
+val apiCompileOnly: Configuration by configurations.getting
+val commonCompileOnly: Configuration by configurations.getting
+val bungeecordCompileOnly: Configuration by configurations.getting
+val fabricCompileOnly: Configuration by configurations.getting
+val forgeCompileOnly: Configuration by configurations.getting
+val neoforgeCompileOnly: Configuration by configurations.getting
+val paperCompileOnly: Configuration by configurations.getting {
+    extendsFrom(mainCompileOnly)
+}
+val spigotCompileOnly: Configuration by configurations.getting
+val spongeCompileOnly: Configuration by configurations.getting {
+    extendsFrom(mainCompileOnly)
+}
+val velocityCompileOnly: Configuration by configurations.getting
+listOf(bungeecordCompileOnly, fabricCompileOnly, forgeCompileOnly, neoforgeCompileOnly,
+    paperCompileOnly, spigotCompileOnly, spongeCompileOnly, velocityCompileOnly).forEach {
+    it.extendsFrom(apiCompileOnly)
+    it.extendsFrom(commonCompileOnly)
+}
+val modImplementation: Configuration by configurations.creating
+val fabricModImplementation: Configuration by configurations.creating {
+    extendsFrom(modImplementation)
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType<RemapJarTask> {
+    mixinRemap {
+        enableBaseMixin()
+        disableRefmap()
     }
-    val mainCompileOnly by creating
-    listOf("compileOnly", "paperCompileOnly", "spongeCompileOnly").forEach {
-        getByName(it).extendsFrom(mainCompileOnly)
-    }
-    val modImplementation by creating
-    getByName("fabricImplementation").extendsFrom(modImplementation)
 }
 
 repositories {
+    // maven("https://maven.neuralnexus.dev/mirror")
     mavenCentral()
     unimined.fabricMaven()
     unimined.minecraftForgeMaven()
@@ -100,10 +126,9 @@ repositories {
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
 }
 
-// ------------------------------------------- Vanilla -------------------------------------------
 unimined.minecraft {
-    combineWith(sourceSets.getByName("api"))
-    combineWith(sourceSets.getByName("common"))
+    combineWith(api)
+    combineWith(common)
     version(minecraftVersion)
     mappings {
         parchment(parchmentMinecraft, parchmentVersion)
@@ -113,30 +138,22 @@ unimined.minecraft {
     defaultRemapJar = false
 }
 
-tasks.jar {
-    archiveClassifier.set("vanilla")
-}
-
-// ------------------------------------------- API -------------------------------------------
 tasks.register<Jar>("apiJar") {
     archiveClassifier.set("api")
-    from(sourceSets.getByName("api").output)
+    from(api.output)
 }
 
-// ------------------------------------------- Common -------------------------------------------
 tasks.register<Jar>("commonJar") {
     archiveClassifier.set("common")
-    from(sourceSets.getByName("common").output)
+    from(common.output)
 }
 
-// ------------------------------------------- BungeeCord -------------------------------------------
 tasks.register<Jar>("bungeecordJar") {
     archiveClassifier.set("bungeecord")
-    from(sourceSets.getByName("bungeecord").output)
+    from(bungeecord.output)
 }
 
-// ------------------------------------------- Fabric -------------------------------------------
-unimined.minecraft(sourceSets.getByName("fabric")) {
+unimined.minecraft(fabric) {
     combineWith(sourceSets.main.get())
     fabric {
         loader(fabricLoaderVersion)
@@ -144,14 +161,17 @@ unimined.minecraft(sourceSets.getByName("fabric")) {
     defaultRemapJar = true
 }
 
-tasks.named<RemapJarTask>("remapFabricJar") {
-    mixinRemap {
-        disableRefmap()
+tasks.register<ShadowJar>("relocateFabricJar") {
+    dependsOn("remapFabricJar")
+    from(tasks.getByName<RemapJarTask>("remapFabricJar").asJar.archiveFile.get().asFile)
+    archiveClassifier.set("fabric-relocated")
+    dependencies {
+        exclude("com/example/templatemod/mixin/vanilla/**")
     }
+    relocate("com.example.templatemod.vanilla", "com.example.templatemod.y_intmdry")
 }
 
-// ------------------------------------------- Forge -------------------------------------------
-unimined.minecraft(sourceSets.getByName("forge")) {
+unimined.minecraft(forge) {
     combineWith(sourceSets.main.get())
     minecraftForge {
         loader(forgeVersion)
@@ -159,8 +179,7 @@ unimined.minecraft(sourceSets.getByName("forge")) {
     defaultRemapJar = true
 }
 
-// ------------------------------------------- NeoForge -------------------------------------------
-unimined.minecraft(sourceSets.getByName("neoforge")) {
+unimined.minecraft(neoforge) {
     combineWith(sourceSets.main.get())
     neoForge {
         loader(neoForgeVersion)
@@ -168,9 +187,9 @@ unimined.minecraft(sourceSets.getByName("neoforge")) {
     defaultRemapJar = true
 }
 
-// ------------------------------------------- Paper -------------------------------------------
-unimined.minecraft(sourceSets.getByName("paper")) {
+unimined.minecraft(paper) {
     combineWith(sourceSets.main.get())
+    combineWith(spigot)
     accessTransformer {
         // https://github.com/PaperMC/Paper/blob/main/build-data/paper.at
         accessTransformer("${rootProject.projectDir}/src/paper/paper.at")
@@ -178,38 +197,34 @@ unimined.minecraft(sourceSets.getByName("paper")) {
     defaultRemapJar = true
 }
 
-// ------------------------------------------- Sponge -------------------------------------------
-unimined.minecraft(sourceSets.getByName("sponge")) {
+unimined.minecraft(sponge) {
     combineWith(sourceSets.main.get())
     defaultRemapJar = true
 }
 
-// ------------------------------------------- Spigot -------------------------------------------
 tasks.register<Jar>("spigotJar") {
     archiveClassifier.set("spigot")
-    from(sourceSets.getByName("spigot").output)
+    from(spigot)
 }
 
-// ------------------------------------------- Velocity -------------------------------------------
 tasks.register<Jar>("velocityJar") {
     archiveClassifier.set("velocity")
-    from(sourceSets.getByName("velocity").output)
+    from(velocity.output)
 }
 
-// ------------------------------------------- Common -------------------------------------------
 dependencies {
-    "mainCompileOnly"(libs.annotations)
-    "mainCompileOnly"(libs.mixin)
-    "commonCompileOnly"("org.slf4j:slf4j-api:2.0.16")
-    "bungeecordCompileOnly"("net.md-5:bungeecord-api:$bungeecordVersion")
-    listOf("fabric-api-base", "fabric-command-api-v2", "fabric-lifecycle-events-v1").forEach {
-        "fabricModImplementation"(fabricApi.fabricModule(it, fabricVersion))
+    mainCompileOnly(libs.annotations)
+    mainCompileOnly(libs.mixin)
+    commonCompileOnly(libs.slf4j)
+    bungeecordCompileOnly("net.md-5:bungeecord-api:$bungeecordVersion")
+    listOf("api-base", "command-api-v2", "lifecycle-events-v1", "networking-api-v1").forEach {
+        fabricModImplementation(fabricApi.fabricModule("fabric-$it", fabricVersion))
     }
-    "paperCompileOnly"("io.papermc.paper:paper-api:$minecraftVersion-$paperVersion")
-    "paperCompileOnly"(libs.ignite.api)
-    "spigotCompileOnly"("org.spigotmc:spigot-api:$minecraftVersion-$spigotVersion")
-    "spongeCompileOnly"("org.spongepowered:spongeapi:$spongeVersion")
-    "velocityCompileOnly"("com.velocitypowered:velocity-api:$velocityVersion")
+    paperCompileOnly("io.papermc.paper:paper-api:$minecraftVersion-$paperVersion")
+    paperCompileOnly(libs.ignite.api)
+    spigotCompileOnly("org.spigotmc:spigot-api:$minecraftVersion-$spigotVersion")
+    spongeCompileOnly("org.spongepowered:spongeapi:$spongeVersion")
+    velocityCompileOnly("com.velocitypowered:velocity-api:$velocityVersion")
 }
 
 tasks.withType<ProcessResources> {
@@ -229,7 +244,18 @@ tasks.withType<ProcessResources> {
     }
 }
 
-tasks.withType<Jar> {
+tasks.jar {
+    from(
+        bungeecord.output,
+        fabric.output,
+        forge.output,
+        neoforge.output,
+        paper.output,
+        sponge.output,
+        spigot.output,
+        velocity.output
+    )
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes(
             mapOf(
@@ -241,21 +267,12 @@ tasks.withType<Jar> {
                 "Implementation-Timestamp" to Instant.now().toString(),
                 "FMLCorePluginContainsFMLMod" to "true",
                 "TweakClass" to "org.spongepowered.asm.launch.MixinTweaker",
-                "MixinConfigs" to "$modId.mixins.json,$modId.forge.mixins.json"
+                "MixinConfigs" to "$modId.mixins.vanilla.json,$modId.mixins.forge.json"
             )
         )
     }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(listOf("README.md", "LICENSE")) {
         into("META-INF")
     }
 }
-
-tasks.build.get().dependsOn(
-    "apiJar",
-    "commonJar",
-    "bungeecordJar",
-    "spigotJar",
-    "velocityJar",
-    "spotlessApply",
-)
+tasks.build.get().dependsOn("spotlessApply")

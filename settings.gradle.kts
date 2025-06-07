@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        // maven("https://maven.neuralnexus.dev/mirror")
         gradlePluginPortal()
         mavenCentral()
         maven("https://maven.wagyourtail.xyz/releases")

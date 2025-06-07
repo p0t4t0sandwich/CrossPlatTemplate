@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2025 SomeNameHere - person@example.com
- * The project is Licensed under <a href="https://github.com/Example/TestMod/blob/dev/LICENSE">MIT</a>
- */
+* Copyright (c) 2025 SomeNameHere - person@example.com
+* The project is Licensed under <a href="https://github.com/Example/TestMod/blob/dev/LICENSE">MIT</a>
+*/
 package com.example.templatemod.sponge.mixin;
 
 import net.minecraft.server.MinecraftServer;

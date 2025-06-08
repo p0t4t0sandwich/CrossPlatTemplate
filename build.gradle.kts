@@ -43,10 +43,9 @@ spotless {
         leadingTabsToSpaces()
         endWithNewline()
         licenseHeader("""/**
-* Copyright (c) 2025 $author
-* The project is Licensed under <a href="https://github.com/Example/TestMod/blob/dev/LICENSE">MIT</a>
-*/
-""")
+ * Copyright (c) 2025 $author
+ * This project is Licensed under <a href="$sourceUrl/blob/main/LICENSE">$license</a>
+ */""")
     }
 }
 
